@@ -1267,6 +1267,12 @@ export const OceanGlobe: React.FC<OceanGlobeProps> = ({
     }
   };
 
+  // Determine whether the selected coordinates represent dry land
+  const isLand = Boolean(
+    oceanData?.seabedInfo?.isLand ||
+    (oceanData?.seabedInfo?.elevationMeters !== undefined && oceanData.seabedInfo.elevationMeters > 0)
+  );
+
   const tempDisplay =
     oceanData?.temperature !== null && oceanData?.temperature !== undefined
       ? `${oceanData.temperature.toFixed(2)} °C`
@@ -1551,11 +1557,11 @@ export const OceanGlobe: React.FC<OceanGlobeProps> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: '#6ceaff' }}>
-                ◉ SELECTED LOCATION
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: isLand ? '#fca5a5' : '#6ceaff' }}>
+                ◉ {isLand ? 'LANDMASS DETECTED' : 'SELECTED LOCATION'}
               </div>
               <div style={{ fontWeight: 700, fontSize: 16, marginTop: 6 }}>
-                {oceanData?.oceanBasin || 'Global Ocean'}
+                {isLand ? 'The selected point is a landmass' : (oceanData?.oceanBasin || 'Global Ocean')}
               </div>
             </div>
             <button
@@ -1589,7 +1595,7 @@ export const OceanGlobe: React.FC<OceanGlobeProps> = ({
               requestedLatitude?: number;
               requestedLongitude?: number;
             }) | null;
-            if (isLoading || !marine ||
+            if (isLand || isLoading || !marine ||
                 typeof marine.actualLatitude !== 'number' ||
                 typeof marine.actualLongitude !== 'number' ||
                 !Number.isFinite(marine.actualLatitude) ||
@@ -1601,30 +1607,57 @@ export const OceanGlobe: React.FC<OceanGlobeProps> = ({
             );
           })()}
 
-          <div style={{ margin: '12px 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#6ceaff' }}>
-            OCEAN PROPERTIES {isLoading ? '· UPDATING…' : ''}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, opacity: isLoading ? 0.55 : 1 }}>
-            {[
-              ['TEMPERATURE', tempDisplay],
-              ['SALINITY', salinityDisplay],
-              ['CURRENT SPEED', currentSpeedDisplay],
-              ['CURRENT DIRECTION', currentDirDisplay],
-              ['WAVE HEIGHT', oceanData?.waveHeight != null ? `${oceanData.waveHeight.toFixed(2)} m` : '--'],
-              ['WAVE PERIOD', oceanData?.wavePeriod != null ? `${oceanData.wavePeriod.toFixed(2)} s` : '--'],
-              ['WIND SPEED', oceanData?.windSpeed != null ? String(oceanData.windSpeed.toFixed(2)) : '--'],
-              ['SELECTED DEPTH', `${depth} m`],
-            ].map(([label, value]) => (
-              <div key={label} style={{ background: 'rgba(11,42,67,0.8)', border: '1px solid rgba(120,207,233,0.1)', padding: '9px 10px', borderRadius: 9 }}>
-                <div style={{ fontSize: 9, color: '#89aabd', marginBottom: 5 }}>{label}</div>
-                <strong style={{ color: '#e5fbff', fontFamily: 'monospace', fontSize: 12 }}>{isLoading ? 'Loading…' : value}</strong>
+          {isLand ? (
+            <div
+              style={{
+                margin: '14px 0 8px',
+                padding: '12px 14px',
+                borderRadius: 10,
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5'
+              }}
+            >
+              <strong style={{ display: 'block', fontSize: 12, marginBottom: 4, color: '#ff8a8a' }}>
+                Ocean Data Unavailable
+              </strong>
+              <div style={{ fontSize: 11, color: '#fcdcdc', lineHeight: 1.45 }}>
+                The selected point is located on dry land. Oceanographic parameters (salinity, sea surface temperature, currents, and waves) are unavailable.
               </div>
-            ))}
-          </div>
+              {oceanData?.seabedInfo?.elevationMeters !== undefined && oceanData.seabedInfo.elevationMeters > 0 && (
+                <div style={{ marginTop: 8, fontSize: 11, color: '#a6f4ff', fontFamily: 'monospace' }}>
+                  LAND ELEVATION: +{oceanData.seabedInfo.elevationMeters.toLocaleString()} m ASL
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div style={{ margin: '12px 0 8px', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#6ceaff' }}>
+                OCEAN PROPERTIES {isLoading ? '· UPDATING…' : ''}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, opacity: isLoading ? 0.55 : 1 }}>
+                {[
+                  ['TEMPERATURE', tempDisplay],
+                  ['SALINITY', salinityDisplay],
+                  ['CURRENT SPEED', currentSpeedDisplay],
+                  ['CURRENT DIRECTION', currentDirDisplay],
+                  ['WAVE HEIGHT', oceanData?.waveHeight != null ? `${oceanData.waveHeight.toFixed(2)} m` : '--'],
+                  ['WAVE PERIOD', oceanData?.wavePeriod != null ? `${oceanData.wavePeriod.toFixed(2)} s` : '--'],
+                  ['WIND SPEED', oceanData?.windSpeed != null ? String(oceanData.windSpeed.toFixed(2)) : '--'],
+                  ['SELECTED DEPTH', `${depth} m`],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ background: 'rgba(11,42,67,0.8)', border: '1px solid rgba(120,207,233,0.1)', padding: '9px 10px', borderRadius: 9 }}>
+                    <div style={{ fontSize: 9, color: '#89aabd', marginBottom: 5 }}>{label}</div>
+                    <strong style={{ color: '#e5fbff', fontFamily: 'monospace', fontSize: 12 }}>{isLoading ? 'Loading…' : value}</strong>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           <div style={{ marginTop: 12, fontSize: 10, lineHeight: 1.6, color: '#9dc6d7' }}>
             <div><strong style={{ color: '#caf4ff' }}>DATA TIME:</strong> {oceanData?.time || 'Not available'}</div>
-            <div><strong style={{ color: '#caf4ff' }}>SOURCE:</strong> {oceanData?.source || 'Not available'}</div>
+            <div><strong style={{ color: '#caf4ff' }}>SOURCE:</strong> {isLand ? (oceanData?.seabedInfo?.source || 'Authoritative Topographic Grid') : (oceanData?.source || 'Not available')}</div>
             <div style={{ opacity: 0.8, marginTop: 4 }}>Displayed values are supplied by the current marine-data pipeline; availability and scientific provenance depend on the selected source.</div>
           </div>
 
@@ -1638,13 +1671,15 @@ export const OceanGlobe: React.FC<OceanGlobeProps> = ({
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={triggerDive}
-            style={{ width: '100%', marginTop: 10, padding: '10px 12px', background: '#11cbe0', color: '#041625', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 800 }}
-          >
-            ⚓ Explore Ocean Floor
-          </button>
+          {!isLand && (
+            <button
+              type="button"
+              onClick={triggerDive}
+              style={{ width: '100%', marginTop: 10, padding: '10px 12px', background: '#11cbe0', color: '#041625', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 800 }}
+            >
+              ⚓ Explore Ocean Floor
+            </button>
+          )}
         </section>
       )}
 
