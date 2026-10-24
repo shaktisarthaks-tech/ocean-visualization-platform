@@ -15,6 +15,7 @@ interface HeaderProps {
   isAssistantOpen: boolean;
   isUnderwater?: boolean;
   onToggleUnderwater?: () => void;
+  isLand?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,7 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAssistant,
   isAssistantOpen,
   isUnderwater = false,
-  onToggleUnderwater
+  onToggleUnderwater,
+  isLand = false
 }) => {
   const handleToggleAudio = () => {
     const isNowPlaying = oceanAudio.toggleMute();
@@ -160,10 +162,16 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           type="button"
-          onClick={onOpenReportModal}
-          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-black bg-cyan-400 rounded-lg hover:bg-cyan-300 transition-colors shadow-lg shadow-cyan-500/30 whitespace-nowrap shrink-0 flex items-center gap-1.5"
+          onClick={isLand ? undefined : onOpenReportModal}
+          disabled={isLand}
+          title={isLand ? 'Research Dossier is unavailable on landmasses' : 'Generate Research Dossier'}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold rounded-lg transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            isLand
+              ? 'opacity-40 bg-slate-700 text-slate-400 cursor-not-allowed border border-white/10 shadow-none'
+              : 'text-black bg-cyan-400 hover:bg-cyan-300 shadow-lg shadow-cyan-500/30 cursor-pointer'
+          }`}
         >
-          <FileText className="w-3.5 h-3.5 text-black" />
+          <FileText className={`w-3.5 h-3.5 ${isLand ? 'text-slate-400' : 'text-black'}`} />
           <span className="hidden sm:inline">Research Dossier</span>
           <span className="sm:hidden">PDF</span>
         </button>
